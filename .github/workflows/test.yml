@@ -1,0 +1,38 @@
+name: 'CI'
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm i -g pnpm
+      - run: pnpm install
+      - run: npm run test:cov
+
+      - name: build application
+        run: npm run build
+
+      - name: generate api artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: code-coverage
+          path: ./coverage
+
+      - name: deploy to Server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          script: |
+            cd home
+            git checkout develop
+            git pull origin develop
+            docker compose down
+            docker compose up --force-recreate -d
