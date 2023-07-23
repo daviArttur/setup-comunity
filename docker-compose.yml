@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:1.24-alpine
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/conf:/etc/nginx/conf.d
+    networks:
+      - redis-network
+
+  redis:
+    image: redis:7.0-alpine
+    networks:
+      - redis-network
+    ports:
+      - '6379:6379'
+    container_name: redis
+
+  comunity_api:
+    build: .
+    container_name: comunity_api
+    ports:
+      - '3000:3000'
+    depends_on:
+      - redis
+    networks:
+      - redis-network
+    env_file:
+      - .env
+    volumes:
+      - uploads:/app/uploads
+
+networks:
+  redis-network:
+    driver: bridge
+
+volumes:
+  uploads:
